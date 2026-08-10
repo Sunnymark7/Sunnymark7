@@ -1,0 +1,55 @@
+{
+  "owner": "Sunnymark7",
+  "profile_repository": "Sunnymark7",
+  "include_forks": false,
+  "categories": [
+    {
+      "topic": "project-ehand",
+      "icon": "🖐️",
+      "title": "eHand · 智能触觉手套",
+      "description": "多通道触觉、手部姿态、嵌入式通信与实时三维反馈。",
+      "private_baseline": 2,
+      "keywords": ["ehand", "tactile", "smart-glove", "pressure-glove"]
+    },
+    {
+      "topic": "project-neurotech",
+      "icon": "🧠",
+      "title": "Neurotech · 脑机交互",
+      "description": "SSVEP、EEG 采集、手部控制与神经交互实验。",
+      "private_baseline": 1,
+      "keywords": ["ssvep", "eeg", "bci", "neuro", "brain-computer"]
+    },
+    {
+      "topic": "project-embedded",
+      "icon": "⚡",
+      "title": "Embedded · 嵌入式工具",
+      "description": "ESP32 固件、烧录工具、ADC 与设备侧数据采集。",
+      "private_baseline": 1,
+      "keywords": ["esp32", "firmware", "flasher", "downloadtool", "adc", "embedded"]
+    },
+    {
+      "topic": "project-instrumentation",
+      "icon": "🧪",
+      "title": "Instrumentation · 科研测量",
+      "description": "标定、测量和实验仪器配套软件。",
+      "private_baseline": 1,
+      "keywords": ["calibration", "measurement", "thermobath", "instrumentation"]
+    },
+    {
+      "topic": "project-simulation",
+      "icon": "📐",
+      "title": "Simulation · 工程仿真",
+      "description": "动力学、机械振动、模型与工程计算。",
+      "private_baseline": 1,
+      "keywords": ["simulation", "suspension", "vibration", "dynamics"]
+    },
+    {
+      "topic": "project-experiments",
+      "icon": "🧩",
+      "title": "Experiments · 创意原型",
+      "description": "独立网页实验、快速验证和轻量交互原型。",
+      "private_baseline": 2,
+      "keywords": ["web-experiment", "prototype", "sandbox"]
+    }
+  ]
+}

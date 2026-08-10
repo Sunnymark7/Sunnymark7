@@ -1,0 +1,46 @@
+name: Sync profile projects
+
+on:
+  schedule:
+    - cron: "17 1 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [repository-updated]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: profile-project-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout profile repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Generate repository index
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PROFILE_REPO_TOKEN: ${{ secrets.PROFILE_REPO_TOKEN }}
+        run: python scripts/update_projects.py
+
+      - name: Commit changed profile
+        shell: bash
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "Profile index is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore: sync repository index"
+          git push
