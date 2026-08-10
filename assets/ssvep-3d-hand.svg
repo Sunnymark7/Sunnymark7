@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="260" viewBox="0 0 600 260" role="img" aria-labelledby="title desc">
+  <title id="title">SSVEP 3D Hand Interaction</title>
+  <desc id="desc">A stylized browser hand model surrounded by five SSVEP frequency targets.</desc>
+  <defs>
+    <style>
+      .target { animation: target 2.4s ease-in-out infinite; }
+      .t2 { animation-delay: .35s; } .t3 { animation-delay: .7s; }
+      .t4 { animation-delay: 1.05s; } .t5 { animation-delay: 1.4s; }
+      @keyframes target { 0%,100% { opacity:.38; } 50% { opacity:1; } }
+      @media (prefers-reduced-motion: reduce) { .target { animation:none !important; opacity:.8; } }
+    </style>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/><stop offset="1" stop-color="#0b3048"/>
+    </linearGradient>
+    <linearGradient id="hand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2dd4bf"/>
+    </linearGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20 0H0V20" fill="none" stroke="#7dd3fc" stroke-opacity=".06"/>
+    </pattern>
+  </defs>
+  <rect width="600" height="260" rx="18" fill="url(#bg)"/>
+  <rect width="600" height="260" rx="18" fill="url(#grid)"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="28" y="38" fill="#f8fafc" font-size="17" font-weight="700" letter-spacing="1.4">SSVEP · 3D HAND</text>
+    <text x="28" y="61" fill="#94a3b8" font-size="12">Five visual targets · finger-level interaction</text>
+  </g>
+
+  <g transform="translate(242 48)" fill="none" stroke="url(#hand)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M59 166V76M59 96L29 62M59 113L91 67M59 132L107 111M59 150L25 143" stroke-width="4"/>
+    <path d="M29 62L17 31M91 67L104 34M107 111L140 101M25 143L7 161" stroke-width="4"/>
+    <path d="M59 166C48 182 31 187 20 174C12 165 17 151 25 143M59 166C70 183 92 186 104 173C114 162 112 130 107 111" stroke="#bae6fd" stroke-opacity=".62" stroke-width="3"/>
+    <g fill="#07111f" stroke-width="3">
+      <circle cx="59" cy="76" r="5"/><circle cx="29" cy="62" r="5"/><circle cx="17" cy="31" r="5"/>
+      <circle cx="91" cy="67" r="5"/><circle cx="104" cy="34" r="5"/><circle cx="107" cy="111" r="5"/>
+      <circle cx="140" cy="101" r="5"/><circle cx="25" cy="143" r="5"/><circle cx="7" cy="161" r="5"/>
+      <circle cx="59" cy="166" r="6"/>
+    </g>
+  </g>
+
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">
+    <g class="target"><rect x="34" y="92" width="66" height="34" rx="9" fill="#38bdf8" fill-opacity=".16" stroke="#38bdf8"/><text x="67" y="113" fill="#bae6fd">8 Hz</text></g>
+    <g class="target t2"><rect x="52" y="165" width="66" height="34" rx="9" fill="#2dd4bf" fill-opacity=".14" stroke="#2dd4bf"/><text x="85" y="186" fill="#99f6e4">10 Hz</text></g>
+    <g class="target t3"><rect x="467" y="78" width="74" height="34" rx="9" fill="#a3e635" fill-opacity=".12" stroke="#a3e635"/><text x="504" y="99" fill="#d9f99d">12 Hz</text></g>
+    <g class="target t4"><rect x="482" y="139" width="74" height="34" rx="9" fill="#2dd4bf" fill-opacity=".14" stroke="#2dd4bf"/><text x="519" y="160" fill="#99f6e4">15 Hz</text></g>
+    <g class="target t5"><rect x="439" y="199" width="74" height="34" rx="9" fill="#38bdf8" fill-opacity=".16" stroke="#38bdf8"/><text x="476" y="220" fill="#bae6fd">20 Hz</text></g>
+  </g>
+  <path d="M118 182C173 195 195 186 235 168M404 151C439 149 455 157 482 156" fill="none" stroke="#7dd3fc" stroke-opacity=".28" stroke-dasharray="5 7"/>
+  <rect x="1" y="1" width="598" height="258" rx="17" fill="none" stroke="#7dd3fc" stroke-opacity=".16" stroke-width="2"/>
+</svg>

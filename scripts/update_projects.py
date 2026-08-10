@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Generate the project index in the profile README from GitHub repositories."""
+"""Build a project-first GitHub Profile README from repository topics."""
 
 from __future__ import annotations
 
+import html
 import json
 import os
 import re
@@ -21,6 +22,7 @@ CONFIG_PATH = ROOT / "data" / "projects.json"
 START_MARKER = "<!-- AUTO-PROJECTS:START -->"
 END_MARKER = "<!-- AUTO-PROJECTS:END -->"
 API_ROOT = "https://api.github.com"
+CONTROL_TOPIC_PREFIXES = ("project-", "portfolio-", "status-")
 
 
 def api_get(path: str, token: str | None) -> Any:
@@ -36,14 +38,30 @@ def api_get(path: str, token: str | None) -> Any:
         return json.load(response)
 
 
+def api_get_all(path: str, token: str | None) -> list[dict[str, Any]]:
+    """Read every GitHub API page instead of silently stopping at 100 repos."""
+    repositories: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        separator = "&" if "?" in path else "?"
+        batch = api_get(f"{path}{separator}per_page=100&page={page}", token)
+        if not isinstance(batch, list):
+            raise TypeError("GitHub repository response must be a list")
+        repositories.extend(batch)
+        if len(batch) < 100:
+            return repositories
+        page += 1
+
+
 def fetch_repositories(owner: str) -> tuple[list[dict[str, Any]], bool]:
+    """Fetch private repos when configured; fail closed if that source is unavailable."""
     profile_token = os.environ.get("PROFILE_REPO_TOKEN", "").strip()
-    api_token = profile_token or os.environ.get("GITHUB_TOKEN", "").strip() or None
+    github_token = os.environ.get("GITHUB_TOKEN", "").strip() or None
 
     if profile_token:
         try:
-            repositories = api_get(
-                "/user/repos?affiliation=owner&visibility=all&sort=updated&per_page=100",
+            repositories = api_get_all(
+                "/user/repos?affiliation=owner&visibility=all&sort=pushed",
                 profile_token,
             )
             owned = [
@@ -52,165 +70,409 @@ def fetch_repositories(owner: str) -> tuple[list[dict[str, Any]], bool]:
                 if repo.get("owner", {}).get("login", "").casefold() == owner.casefold()
             ]
             return owned, True
-        except urllib.error.HTTPError as error:
-            print(
-                f"warning: private repository lookup failed ({error.code}); using public API",
-                file=sys.stderr,
-            )
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as error:
+            detail = getattr(error, "code", error.__class__.__name__)
+            raise RuntimeError(
+                f"private repository lookup failed ({detail}); refusing to publish partial counts"
+            ) from error
 
     encoded_owner = urllib.parse.quote(owner, safe="")
-    repositories = api_get(
-        f"/users/{encoded_owner}/repos?type=owner&sort=updated&per_page=100",
-        api_token,
-    )
-    return repositories, False
+    public_path = f"/users/{encoded_owner}/repos?type=owner&sort=pushed"
+    try:
+        return api_get_all(public_path, github_token), False
+    except urllib.error.HTTPError as error:
+        if not github_token or error.code not in {401, 403}:
+            raise
+        print(
+            f"warning: public token lookup failed ({error.code}); retrying anonymously",
+            file=sys.stderr,
+        )
+        return api_get_all(public_path, None), False
 
 
-def normalized_text(repo: dict[str, Any]) -> str:
-    values = [repo.get("name", ""), repo.get("description") or ""]
-    values.extend(repo.get("topics") or [])
-    return " ".join(values).casefold()
+def topic_names(repo: dict[str, Any]) -> list[str]:
+    return [str(topic).casefold() for topic in repo.get("topics") or []]
+
+
+def is_visible_repo(repo: dict[str, Any], config: dict[str, Any]) -> bool:
+    if repo.get("name", "").casefold() == config["profile_repository"].casefold():
+        return False
+    if repo.get("fork") and not config.get("include_forks", False):
+        return False
+    if repo.get("archived") and not config.get("include_archived", False):
+        return False
+    return "portfolio-hide" not in topic_names(repo)
+
+
+def words(value: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9]+", value.casefold()))
+
+
+def repository_words(repo: dict[str, Any]) -> set[str]:
+    values = [str(repo.get("name", "")), str(repo.get("description") or "")]
+    values.extend(str(topic) for topic in repo.get("topics") or [])
+    return words(" ".join(values))
+
+
+def project_topics(repo: dict[str, Any]) -> list[str]:
+    return sorted({topic for topic in topic_names(repo) if topic.startswith("project-")})
 
 
 def classify(repo: dict[str, Any], categories: list[dict[str, Any]]) -> str | None:
-    topics = {str(topic).casefold() for topic in repo.get("topics") or []}
-    for category in categories:
-        if category["topic"].casefold() in topics:
-            return category["topic"]
+    """Prefer an explicit project topic; otherwise use token-aware keywords."""
+    topics = project_topics(repo)
+    configured_order = [str(category["topic"]).casefold() for category in categories]
+    if topics:
+        if len(topics) > 1:
+            if repo.get("private"):
+                warning = "private repository has multiple project topics; using configured order"
+            else:
+                warning = (
+                    f"{repo.get('name', 'repository')} has multiple project topics: "
+                    + ", ".join(topics)
+                )
+            print(f"warning: {warning}", file=sys.stderr)
+        for configured_topic in configured_order:
+            if configured_topic in topics:
+                return configured_topic
+        return topics[0]
 
-    haystack = normalized_text(repo)
+    repo_words = repository_words(repo)
     for category in categories:
-        if any(keyword.casefold() in haystack for keyword in category.get("keywords", [])):
-            return category["topic"]
+        for keyword in category.get("keywords", []):
+            keyword_words = words(str(keyword))
+            if keyword_words and keyword_words <= repo_words:
+                return str(category["topic"])
     return None
 
 
-def md_text(value: str) -> str:
-    return " ".join(value.replace("|", "\\|").replace("<", "&lt;").split())
+def dynamic_category(topic: str | None) -> dict[str, Any]:
+    if topic is None:
+        return {
+            "topic": "repository-inbox",
+            "source_key": None,
+            "icon": "◌",
+            "title": "Project Inbox",
+            "subtitle": "待归类",
+            "description": "已自动发现，但还没有 project-* Topic 的公开仓库。",
+            "stack": ["Needs topic"],
+        }
+    slug = topic.removeprefix("project-") or "untitled"
+    title = " ".join(part.capitalize() for part in slug.split("-") if part)
+    return {
+        "topic": topic,
+        "icon": "✦",
+        "title": title,
+        "subtitle": "自动创建的项目族",
+        "description": f"由 `{topic}` Topic 自动发现；可在 data/projects.json 中补充正式说明。",
+        "stack": ["Auto-routed"],
+    }
 
 
-def repo_technologies(repo: dict[str, Any]) -> str:
-    values: list[str] = []
-    language = repo.get("language")
+def validate_config(config: dict[str, Any]) -> None:
+    topics = [str(category["topic"]).casefold() for category in config["categories"]]
+    if len(topics) != len(set(topics)):
+        raise ValueError("category topics must be unique")
+    invalid_topics = [topic for topic in topics if not topic.startswith("project-")]
+    if invalid_topics:
+        raise ValueError(f"category topics must start with project-: {invalid_topics}")
+    known = set(topics)
+    for project in config.get("curated_projects", []):
+        if str(project["category"]).casefold() not in known:
+            raise ValueError(f"curated project uses unknown category: {project['category']}")
+
+
+def clean_text(value: Any) -> str:
+    return " ".join(str(value or "").split())
+
+
+def html_text(value: Any) -> str:
+    return html.escape(clean_text(value), quote=True)
+
+
+def repo_technologies(repo: dict[str, Any]) -> list[str]:
+    technologies: list[str] = []
+    language = clean_text(repo.get("language"))
     if language:
-        values.append(str(language))
+        technologies.append(language)
     for topic in repo.get("topics") or []:
-        if topic.startswith("project-") or topic in values:
+        topic = clean_text(topic)
+        if not topic or topic.casefold().startswith(CONTROL_TOPIC_PREFIXES):
             continue
-        values.append(str(topic))
-        if len(values) == 4:
+        if topic.casefold() in {value.casefold() for value in technologies}:
+            continue
+        technologies.append(topic)
+        if len(technologies) == 3:
             break
-    return " ".join(f"`{md_text(value)}`" for value in values) or "—"
+    return technologies or ["Repository"]
 
 
-def repository_row(repo: dict[str, Any]) -> str:
-    name = md_text(str(repo["name"]))
-    url = str(repo["html_url"])
-    description = md_text(repo.get("description") or "实验仓库，说明正在完善。")
-    updated = str(repo.get("updated_at") or "")[:7] or "—"
-    if repo.get("archived"):
-        updated = f"Archived · {updated}"
-    return f"| [**{name}**]({url}) | {description} | {repo_technologies(repo)} | `{updated}` |"
+def status_from_repo(repo: dict[str, Any]) -> str:
+    statuses = {
+        "status-active": "Active",
+        "status-research": "Research",
+        "status-prototype": "Prototype",
+        "status-maintained": "Maintained",
+        "status-completed": "Completed",
+    }
+    topics = set(topic_names(repo))
+    for topic, label in statuses.items():
+        if topic in topics:
+            return label
+    return "Archived" if repo.get("archived") else "Maintained"
 
 
-def count_badge(label: str, value: int, color: str) -> str:
-    encoded_label = urllib.parse.quote(label.replace("-", "--").replace("_", "__"), safe="")
-    return (
-        f'<img src="https://img.shields.io/badge/{encoded_label}-{value}-{color}'
-        '?style=flat-square" alt="'
-        f'{label}: {value}">'
+def public_project(
+    repo: dict[str, Any],
+    category: str,
+    overrides: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    override = overrides.get(str(repo.get("name")), {})
+    pushed = clean_text(repo.get("pushed_at"))[:7] or "recently"
+    technologies = override.get("technologies") or repo_technologies(repo)
+    return {
+        "category": category,
+        "title": override.get("title") or repo.get("name") or "Repository",
+        "eyebrow": override.get("eyebrow") or "PUBLIC REPOSITORY",
+        "status": override.get("status") or status_from_repo(repo),
+        "description": override.get("description")
+        or repo.get("description")
+        or "说明正在完善的工程仓库。",
+        "technologies": list(technologies)[:3],
+        "meta": override.get("meta") or f"Last delivery · {pushed}",
+        "url": repo.get("html_url"),
+        "preview": override.get("preview"),
+        "featured": bool(override.get("featured") or "portfolio-featured" in topic_names(repo)),
+        "pushed_at": repo.get("pushed_at") or "",
+    }
+
+
+def render_technologies(technologies: list[str]) -> str:
+    return " ".join(f"<code>{html_text(value)}</code>" for value in technologies[:3])
+
+
+def render_project_card(project: dict[str, Any]) -> list[str]:
+    title = html_text(project["title"])
+    url = clean_text(project.get("url"))
+    title_html = f'<a href="{html_text(url)}">{title}</a>' if url else title
+    lines = [
+        f"<sub><strong>{html_text(project.get('eyebrow'))}</strong> · "
+        f"<code>{html_text(project.get('status')).upper()}</code></sub>",
+    ]
+    preview = clean_text(project.get("preview"))
+    if preview:
+        image = (
+            f'<img src="{html_text(preview)}" width="70%" '
+            f'alt="{title} preview">'
+        )
+        preview_html = f'<a href="{html_text(url)}">{image}</a>' if url else image
+        lines.extend([f'<p align="center">{preview_html}</p>'])
+    lines.extend(
+        [
+            f"<h3>{title_html}</h3>",
+            f"<p>{html_text(project.get('description'))}</p>",
+            f"<p>{render_technologies(list(project.get('technologies') or []))}</p>",
+            f"<sub>{html_text(project.get('meta'))}</sub>",
+        ]
     )
+    if url:
+        lines.append(f'<p><a href="{html_text(url)}"><strong>View repository →</strong></a></p>')
+    reference_url = clean_text(project.get("reference_url"))
+    if reference_url:
+        reference_label = project.get("reference_label") or "View reference →"
+        lines.append(
+            f'<p><a href="{html_text(reference_url)}"><strong>'
+            f"{html_text(reference_label)}</strong></a></p>"
+        )
+    return lines
+
+
+def render_cards(projects: list[dict[str, Any]]) -> list[str]:
+    lines: list[str] = []
+    for project in projects:
+        lines.extend(["<table>", "  <tr>", '    <td width="100%" valign="top">'])
+        lines.extend(f"      {line}" for line in render_project_card(project))
+        lines.extend(["    </td>", "  </tr>", "</table>", ""])
+    return lines
+
+
+def render_atlas_card(category: dict[str, Any], system_count: int) -> list[str]:
+    topic = html_text(category["topic"])
+    noun = "system" if system_count == 1 else "systems"
+    stack = render_technologies(list(category.get("stack") or []))
+    count_label = category.get("count_label") or f"{system_count} {noun}"
+    href = category.get("href") or f"#{topic}"
+    return [
+        f"<h3>{html_text(category.get('icon'))} {html_text(category.get('title'))}</h3>",
+        f"<sub>{html_text(category.get('subtitle'))}</sub>",
+        f"<p>{html_text(category.get('description'))}</p>",
+        f"<p><code>{html_text(count_label)}</code> {stack}</p>",
+        f'<a href="{html_text(href)}"><strong>{html_text(category.get("link_label") or "Explore project family →")}</strong></a>',
+    ]
+
+
+def render_atlas(categories: list[tuple[dict[str, Any], int]]) -> list[str]:
+    lines = ["<table>"]
+    for index in range(0, len(categories), 2):
+        pair = categories[index : index + 2]
+        lines.append("  <tr>")
+        for category, system_count in pair:
+            width = "100%" if len(pair) == 1 else "50%"
+            colspan = ' colspan="2"' if len(pair) == 1 else ""
+            lines.append(f'    <td width="{width}" valign="top"{colspan}>')
+            lines.extend(
+                f"      {line}" for line in render_atlas_card(category, system_count)
+            )
+            lines.append("    </td>")
+        lines.append("  </tr>")
+    lines.append("</table>")
+    return lines
 
 
 def render_index(
     repositories: list[dict[str, Any]],
-    categories: list[dict[str, Any]],
+    config: dict[str, Any],
     private_access: bool,
 ) -> str:
-    grouped: dict[str | None, list[dict[str, Any]]] = defaultdict(list)
+    categories = list(config["categories"])
+    configured = {str(category["topic"]): category for category in categories}
+    grouped_repositories: dict[str | None, list[dict[str, Any]]] = defaultdict(list)
+    private_inbox_count = 0
     for repo in repositories:
-        grouped[classify(repo, categories)].append(repo)
+        assigned_topic = classify(repo, categories)
+        if repo.get("private") and assigned_topic not in configured:
+            private_inbox_count += 1
+            continue
+        grouped_repositories[assigned_topic].append(repo)
 
-    public_total = sum(not repo.get("private", False) for repo in repositories)
-    if private_access:
-        private_total = sum(bool(repo.get("private")) for repo in repositories)
-    else:
-        private_total = sum(int(category.get("private_baseline", 0)) for category in categories)
+    curated_by_category: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for project in config.get("curated_projects", []):
+        curated = dict(project)
+        curated["featured"] = bool(curated.get("featured"))
+        curated_by_category[str(project["category"])].append(curated)
 
+    discovered_topics = sorted(
+        topic
+        for topic in grouped_repositories
+        if topic is not None and topic not in configured
+    )
+    if None in grouped_repositories:
+        discovered_topics.append(None)
+    all_categories = categories + [dynamic_category(topic) for topic in discovered_topics]
+
+    sections: list[tuple[dict[str, Any], list[dict[str, Any]], int]] = []
+    overrides = config.get("repository_overrides", {})
+    for category in all_categories:
+        topic = str(category["topic"])
+        source_key = category.get("source_key", topic)
+        category_repositories = grouped_repositories.get(source_key, [])
+        public_projects = [
+            public_project(repo, topic, overrides)
+            for repo in category_repositories
+            if not repo.get("private")
+        ]
+        public_projects.sort(
+            key=lambda project: (bool(project.get("featured")), str(project.get("pushed_at"))),
+            reverse=True,
+        )
+        curated_projects = curated_by_category.get(topic, [])
+        if private_access:
+            fetched_private_count = sum(bool(repo.get("private")) for repo in category_repositories)
+            extra_private_count = max(0, fetched_private_count - len(curated_projects))
+        else:
+            extra_private_count = 0
+        projects = curated_projects + public_projects
+        if projects or extra_private_count:
+            sections.append((category, projects, extra_private_count))
+
+    if private_access and private_inbox_count:
+        sections.append(
+            (
+                {
+                    "topic": "private-inbox",
+                    "icon": "🔒",
+                    "title": "Private Inbox",
+                    "subtitle": "等待安全策展",
+                    "description": "已发现新的私有工作，但不会公开仓库名、Topic 或技术细节。",
+                    "stack": ["Private", "Unpublished"],
+                },
+                [],
+                private_inbox_count,
+            )
+        )
+
+    total_systems = sum(len(projects) + extra for _, projects, extra in sections)
     lines = [
         START_MARKER,
         "<!-- Generated by scripts/update_projects.py; do not edit this block manually. -->",
         "",
         '<p align="center">',
-        f"  {count_badge('Public repositories', public_total, '38BDF8')}",
-        f"  {count_badge('Private R&D', private_total, '2DD4BF')}",
-        f"  {count_badge('Project groups', len(categories), 'A3E635')}",
+        f"  <strong>{total_systems} organized systems</strong> · {len(sections)} project families · topic-routed &amp; auto-synced",
         "</p>",
         "",
     ]
-
-    for category in categories:
-        category_repos = grouped.get(category["topic"], [])
-        public_repos = sorted(
-            (repo for repo in category_repos if not repo.get("private")),
-            key=lambda repo: str(repo.get("updated_at") or ""),
-            reverse=True,
+    atlas_categories = [
+        (category, len(projects) + extra)
+        for category, projects, extra in sections
+    ]
+    atlas_categories.append(
+        (
+            {
+                "topic": "automation",
+                "icon": "⚙️",
+                "title": "Auto Routing",
+                "subtitle": "仓库自动整理",
+                "description": "Topic 决定项目族，工作流负责发现、排序、隐私过滤和页面更新。",
+                "stack": ["Topics", "Actions", "Privacy"],
+                "count_label": "Every 6h",
+                "href": "#automation",
+                "link_label": "Add or organize a repository →",
+            },
+            0,
         )
-        if private_access:
-            private_count = sum(bool(repo.get("private")) for repo in category_repos)
-        else:
-            private_count = int(category.get("private_baseline", 0))
+    )
+    lines.extend(render_atlas(atlas_categories))
+    lines.extend(["", "## ✦ Engineering systems", ""])
 
-        if not public_repos and not private_count:
-            continue
-
+    for category, projects, extra_private_count in sections:
+        topic = html_text(category["topic"])
         lines.extend(
             [
-                f"### {category['icon']} {category['title']}　`{category['topic']}`",
+                f'<a id="{topic}"></a>',
+                f"### {category.get('icon', '✦')} {category['title']} · {category.get('subtitle', '')}",
                 "",
-                f"> {category['description']}",
+                clean_text(category.get("description")),
+                "",
+                f"<sub><code>{topic}</code> · {len(projects) + extra_private_count} "
+                f"{'system' if len(projects) + extra_private_count == 1 else 'systems'}</sub>",
                 "",
             ]
         )
-        if public_repos:
+        feature_asset = clean_text(category.get("feature_asset"))
+        if feature_asset:
             lines.extend(
                 [
-                    "| Repository | Purpose | Technology | Updated |",
-                    "| --- | --- | --- | --- |",
-                    *(repository_row(repo) for repo in public_repos),
+                    '<p align="center">',
+                    f'  <img src="{html_text(feature_asset)}" width="100%" alt="{html_text(category["title"])} signal path">',
+                    "</p>",
                     "",
                 ]
             )
-        if private_count:
-            noun = "repository" if private_count == 1 else "repositories"
-            lines.extend([f"🔒 **Private R&D** · {private_count} {noun}", ""])
+        if projects:
+            lines.extend(render_cards(projects))
+            lines.append("")
+        if extra_private_count:
+            noun = "repository" if extra_private_count == 1 else "repositories"
+            verb = "is" if extra_private_count == 1 else "are"
+            lines.extend(
+                [
+                    f"<sub>🔒 {extra_private_count} additional private {noun} {verb} grouped here; names and links stay private.</sub>",
+                    "",
+                ]
+            )
 
-    uncategorized = sorted(
-        (repo for repo in grouped.get(None, []) if not repo.get("private")),
-        key=lambda repo: str(repo.get("updated_at") or ""),
-        reverse=True,
-    )
-    if uncategorized:
-        lines.extend(
-            [
-                "### 🧭 待整理　`needs-project-topic`",
-                "",
-                "> 这些仓库已被自动发现；添加一个 `project-*` Topic 后会移动到对应项目组。",
-                "",
-                "| Repository | Purpose | Technology | Updated |",
-                "| --- | --- | --- | --- |",
-                *(repository_row(repo) for repo in uncategorized),
-                "",
-            ]
-        )
-
-    lines.extend(
-        [
-            "<sub>自动同步公开仓库；私有仓库只显示数量，不公开名称和链接。</sub>",
-            "",
-            END_MARKER,
-        ]
-    )
+    access_note = "公开仓库自动同步；不会自动公开未经策展的私有仓库名称和链接，只展示人工确认的项目标题、安全摘要或额外数量。"
+    lines.extend([f"<sub>{access_note}</sub>", "", END_MARKER])
     return "\n".join(lines)
 
 
@@ -226,21 +488,17 @@ def replace_generated_section(readme: str, generated: str) -> str:
 
 def main() -> None:
     config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    validate_config(config)
     repositories, private_access = fetch_repositories(config["owner"])
-    repositories = [
-        repo
-        for repo in repositories
-        if repo.get("name", "").casefold() != config["profile_repository"].casefold()
-        and (config.get("include_forks", False) or not repo.get("fork"))
-    ]
+    repositories = [repo for repo in repositories if is_visible_repo(repo, config)]
 
     readme = README_PATH.read_text(encoding="utf-8")
-    generated = render_index(repositories, config["categories"], private_access)
+    generated = render_index(repositories, config, private_access)
     updated = replace_generated_section(readme, generated)
     README_PATH.write_text(updated.rstrip() + "\n", encoding="utf-8", newline="\n")
 
-    visibility = "public + private counts" if private_access else "public + configured private counts"
-    print(f"profile index updated from {len(repositories)} repositories ({visibility})")
+    visibility = "public + private counts" if private_access else "public + curated private"
+    print(f"profile atlas updated from {len(repositories)} repositories ({visibility})")
 
 
 if __name__ == "__main__":

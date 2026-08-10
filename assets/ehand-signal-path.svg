@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+  <title id="title">eHand signal path</title>
+  <desc id="desc">An architecture diagram from tactile sensing through ESP32 telemetry to desktop analysis and MuJoCo feedback.</desc>
+  <defs>
+    <style>
+      .route { stroke-dasharray: 9 12; animation: route 4.8s linear infinite; }
+      .node { transform-box: fill-box; transform-origin: center; animation: node 2.8s ease-in-out infinite; }
+      .n2 { animation-delay: .7s; }
+      .n3 { animation-delay: 1.4s; }
+      @keyframes route { to { stroke-dashoffset: -126; } }
+      @keyframes node { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        .route, .node { animation: none !important; }
+      }
+    </style>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#081525"/>
+      <stop offset="1" stop-color="#0b2940"/>
+    </linearGradient>
+    <linearGradient id="routeColor" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset=".55" stop-color="#2dd4bf"/>
+      <stop offset="1" stop-color="#a3e635"/>
+    </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/>
+    </pattern>
+    <filter id="soft" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="300" rx="22" fill="url(#panel)"/>
+  <rect width="1200" height="300" rx="22" fill="url(#grid)"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="48" y="47" fill="#f8fafc" font-size="20" font-weight="700" letter-spacing="2">eHAND · SIGNAL PATH</text>
+    <text x="48" y="73" fill="#94a3b8" font-size="14">A complete loop from physical contact to visible, testable interaction.</text>
+  </g>
+
+  <path class="route" d="M183 168H339M465 168H620M746 168H901" fill="none" stroke="url(#routeColor)" stroke-width="3"/>
+  <g fill="#081525" stroke-width="3" filter="url(#soft)">
+    <circle class="node" cx="260" cy="168" r="6" stroke="#38bdf8"/>
+    <circle class="node n2" cx="542" cy="168" r="6" stroke="#2dd4bf"/>
+    <circle class="node n3" cx="824" cy="168" r="6" stroke="#a3e635"/>
+  </g>
+
+  <g transform="translate(48 105)">
+    <rect width="135" height="126" rx="16" fill="#0d263d" stroke="#38bdf8" stroke-opacity=".55"/>
+    <g fill="#38bdf8">
+      <circle cx="33" cy="37" r="5"/><circle cx="57" cy="37" r="5"/><circle cx="81" cy="37" r="5"/><circle cx="105" cy="37" r="5"/>
+      <circle cx="33" cy="61" r="5"/><circle cx="57" cy="61" r="5"/><circle cx="81" cy="61" r="5"/><circle cx="105" cy="61" r="5"/>
+      <circle cx="33" cy="85" r="5"/><circle cx="57" cy="85" r="5"/><circle cx="81" cy="85" r="5"/><circle cx="105" cy="85" r="5"/>
+    </g>
+  </g>
+
+  <g transform="translate(339 105)">
+    <rect width="126" height="126" rx="16" fill="#0d263d" stroke="#2dd4bf" stroke-opacity=".58"/>
+    <rect x="34" y="34" width="58" height="58" rx="8" fill="#0b1e31" stroke="#2dd4bf" stroke-width="2"/>
+    <path d="M45 48h36M45 60h36M45 72h24" stroke="#99f6e4" stroke-width="3" stroke-linecap="round"/>
+    <path d="M21 42h13M21 58h13M21 74h13M92 42h13M92 58h13M92 74h13" stroke="#2dd4bf" stroke-opacity=".8" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(620 105)">
+    <rect width="126" height="126" rx="16" fill="#0d263d" stroke="#2dd4bf" stroke-opacity=".58"/>
+    <path d="M39 77c13-13 35-13 48 0M29 63c19-20 49-20 68 0M50 90c7-7 19-7 26 0" fill="none" stroke="#5eead4" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="63" cy="101" r="4" fill="#a3e635"/>
+  </g>
+
+  <g transform="translate(901 105)">
+    <rect width="251" height="126" rx="16" fill="#0d263d" stroke="#a3e635" stroke-opacity=".58"/>
+    <rect x="22" y="25" width="108" height="72" rx="7" fill="#081525" stroke="#7dd3fc" stroke-opacity=".7"/>
+    <path d="M31 72l17-16 17 8 18-27 18 20 20-10" fill="none" stroke="#38bdf8" stroke-width="3"/>
+    <path d="M180 89V54m0 10-14-14m14 22 16-16m-16 26 22-2m-22 9-13 9" fill="none" stroke="#a3e635" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="180" cy="54" r="4" fill="#2dd4bf"/>
+    <circle cx="166" cy="50" r="4" fill="#38bdf8"/>
+    <circle cx="196" cy="56" r="4" fill="#38bdf8"/>
+    <circle cx="202" cy="80" r="4" fill="#a3e635"/>
+    <circle cx="167" cy="98" r="4" fill="#a3e635"/>
+  </g>
+
+  <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle">
+    <text x="115" y="260" fill="#e0f2fe" font-size="15" font-weight="700">SENSE</text>
+    <text x="115" y="281" fill="#94a3b8" font-size="12">80 pressure channels + IMU</text>
+    <text x="402" y="260" fill="#ccfbf1" font-size="15" font-weight="700">ACQUIRE</text>
+    <text x="402" y="281" fill="#94a3b8" font-size="12">ESP32-S3 firmware</text>
+    <text x="683" y="260" fill="#ccfbf1" font-size="15" font-weight="700">STREAM</text>
+    <text x="683" y="281" fill="#94a3b8" font-size="12">BLE V2 / Serial · 100 Hz</text>
+    <text x="1027" y="260" fill="#ecfccb" font-size="15" font-weight="700">UNDERSTAND + INTERACT</text>
+    <text x="1027" y="281" fill="#94a3b8" font-size="12">PyQt analysis · MuJoCo feedback</text>
+  </g>
+
+  <rect x="1" y="1" width="1198" height="298" rx="21" fill="none" stroke="#7dd3fc" stroke-opacity=".14" stroke-width="2"/>
+</svg>

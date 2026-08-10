@@ -1,2 +1,7 @@
 __pycache__/
 *.py[cod]
+/header-preview.png
+/signal-preview.png
+/profile-overview.png
+/profile-local-preview.png
+/profile-mobile-preview.png

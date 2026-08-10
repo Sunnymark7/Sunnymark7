@@ -2,54 +2,131 @@
   "owner": "Sunnymark7",
   "profile_repository": "Sunnymark7",
   "include_forks": false,
+  "include_archived": false,
   "categories": [
     {
       "topic": "project-ehand",
       "icon": "🖐️",
-      "title": "eHand · 智能触觉手套",
-      "description": "多通道触觉、手部姿态、嵌入式通信与实时三维反馈。",
-      "private_baseline": 2,
+      "title": "eHand",
+      "subtitle": "智能触觉手套",
+      "description": "从 80 通道触觉与手部姿态，到实时桌面分析和 MuJoCo 三维反馈。",
+      "stack": ["Tactile", "ESP32-S3", "MuJoCo"],
+      "feature_asset": "./assets/ehand-signal-path.svg",
       "keywords": ["ehand", "tactile", "smart-glove", "pressure-glove"]
     },
     {
       "topic": "project-neurotech",
       "icon": "🧠",
-      "title": "Neurotech · 脑机交互",
-      "description": "SSVEP、EEG 采集、手部控制与神经交互实验。",
-      "private_baseline": 1,
+      "title": "Neurotech",
+      "subtitle": "脑机交互",
+      "description": "围绕 EEG / EMG 采集、SSVEP 识别与三维交互建立实验链路。",
+      "stack": ["EEG", "FBCCA", "Three.js"],
       "keywords": ["ssvep", "eeg", "bci", "neuro", "brain-computer"]
     },
     {
       "topic": "project-embedded",
       "icon": "⚡",
-      "title": "Embedded · 嵌入式工具",
-      "description": "ESP32 固件、烧录工具、ADC 与设备侧数据采集。",
-      "private_baseline": 1,
+      "title": "Embedded",
+      "subtitle": "采集与设备工具",
+      "description": "覆盖高精度 ADC 采集、ESP32 固件交付和串口设备工作流。",
+      "stack": ["STM32", "ESP32", "Python"],
       "keywords": ["esp32", "firmware", "flasher", "downloadtool", "adc", "embedded"]
     },
     {
       "topic": "project-instrumentation",
-      "icon": "🧪",
-      "title": "Instrumentation · 科研测量",
-      "description": "标定、测量和实验仪器配套软件。",
-      "private_baseline": 1,
+      "icon": "🌡️",
+      "title": "Instrumentation",
+      "subtitle": "科研测量",
+      "description": "把仪器控制、标定算法、数据管理与报告输出组合为可复用工具。",
+      "stack": [".NET 8", "WPF", "ITS-90"],
       "keywords": ["calibration", "measurement", "thermobath", "instrumentation"]
     },
     {
       "topic": "project-simulation",
       "icon": "📐",
-      "title": "Simulation · 工程仿真",
-      "description": "动力学、机械振动、模型与工程计算。",
-      "private_baseline": 1,
+      "title": "Simulation",
+      "subtitle": "工程仿真",
+      "description": "动力学、机械振动与工程计算的课程实践和验证。",
+      "stack": ["Dynamics", "Python", "Matplotlib"],
       "keywords": ["simulation", "suspension", "vibration", "dynamics"]
+    }
+  ],
+  "curated_projects": [
+    {
+      "category": "project-ehand",
+      "title": "eHand · Intelligent Tactile Glove",
+      "eyebrow": "FLAGSHIP · PRIVATE R&D",
+      "status": "Active",
+      "description": "采集 80 路压力与 IMU 姿态，完成标定、实时曲线、BLE / 串口通信和 MuJoCo 手部反馈。",
+      "technologies": ["Python", "PyQt5", "MuJoCo"],
+      "meta": "80 pressure channels · 100 Hz telemetry"
     },
     {
-      "topic": "project-experiments",
-      "icon": "🧩",
-      "title": "Experiments · 创意原型",
-      "description": "独立网页实验、快速验证和轻量交互原型。",
-      "private_baseline": 2,
-      "keywords": ["web-experiment", "prototype", "sandbox"]
+      "category": "project-ehand",
+      "title": "eHand Hardware · ESP32-S3 Sensor Stack",
+      "eyebrow": "HARDWARE · PRIVATE R&D",
+      "status": "Active",
+      "description": "面向触觉手套的 ESP32-S3 固件与硬件栈，整合压力矩阵、MPU6050 DMP 及 BLE V2 / 串口遥测。",
+      "technologies": ["C++", "PlatformIO", "BLE"],
+      "meta": "Firmware · pin map · BLE telemetry · hardware docs in progress"
+    },
+    {
+      "category": "project-neurotech",
+      "title": "NeuroControl · SSVEP Command Suite",
+      "eyebrow": "BCI · PRIVATE RESEARCH",
+      "status": "Research",
+      "description": "实时采集 EEG / EMG，使用 FBCCA 完成 SSVEP 分类，并连接无人机、游戏与轮椅等控制实验。",
+      "technologies": ["Python", "FBCCA", "Pygame"],
+      "meta": "Acquisition · classification · command integration"
+    },
+    {
+      "category": "project-embedded",
+      "title": "ADS1256 · 8-Channel Data Acquisition",
+      "eyebrow": "DAQ · PRIVATE PROTOTYPE",
+      "status": "Prototype",
+      "description": "基于 STM32F030F4 与 ADS1256 的 8 通道采集链路，支持 SPI / DMA、UART CSV 和 Web Serial 实时配置与绘图。",
+      "technologies": ["Embedded C", "SPI / DMA", "Web Serial"],
+      "meta": "24-bit ADC · 8 channels · browser monitor"
+    },
+    {
+      "category": "project-instrumentation",
+      "title": "Marine Sensor Calibration Suite",
+      "eyebrow": "INSTRUMENTATION · PRIVATE R&D",
+      "status": "Active",
+      "description": "面向海洋传感器的温度标定套件：协调温控设备，采集测温电桥与 SPRT 数据，并完成 ITS-90 多点标定与报告。",
+      "technologies": ["C# / WPF", "SQLite", "GPIB / Modbus"],
+      "meta": ".NET 8 · multipoint calibration · reports"
+    },
+    {
+      "category": "project-simulation",
+      "title": "Half-Car Suspension Dynamics",
+      "eyebrow": "PRIVATE · COURSEWORK ADAPTATION",
+      "status": "Completed",
+      "description": "机械振动课程中的半车悬架动力学适配；基于 nrsyed/half-car（GPL-3.0），补充中文标注与 Matplotlib 兼容修复。",
+      "technologies": ["Python", "Dynamics", "Matplotlib"],
+      "meta": "Upstream-derived · GPL-3.0 · educational use",
+      "reference_url": "https://github.com/nrsyed/half-car",
+      "reference_label": "View credited upstream →"
     }
-  ]
+  ],
+  "repository_overrides": {
+    "SSVEP-3dhand": {
+      "title": "SSVEP 3D Hand Interaction",
+      "eyebrow": "PUBLIC PROTOTYPE",
+      "status": "Prototype",
+      "description": "浏览器端三维手部实验：支持镜像、骨骼调试、单指动作与五频视觉刺激块，为后续在线 EEG 分类预留交互层。",
+      "technologies": ["Three.js", "WebGL", "JavaScript"],
+      "preview": "./assets/ssvep-3d-hand.svg",
+      "featured": true
+    },
+    "esp_downloadtool": {
+      "title": "ESP32 Firmware Flasher",
+      "eyebrow": "PUBLIC TOOL",
+      "status": "Active",
+      "description": "Windows 一键固件烧录工具：自动识别 ZIP 固件布局、串口与芯片，并在失败时回退波特率。",
+      "technologies": ["Python", "Tkinter", "esptool"],
+      "preview": "./assets/esp32-flasher.svg",
+      "featured": true
+    }
+  }
 }
