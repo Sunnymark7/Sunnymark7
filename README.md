@@ -188,7 +188,7 @@
       <h3><a href="https://github.com/Sunnymark7/esp_downloadtool">ESP32 Firmware Flasher</a></h3>
       <p>Windows 一键固件烧录工具：自动识别 ZIP 固件布局、串口与芯片，并在失败时回退波特率。</p>
       <p><code>Python</code> <code>Tkinter</code> <code>esptool</code></p>
-      <sub>Last delivery · 2026-05</sub>
+      <sub>Last delivery · 2026-10</sub>
       <p><a href="https://github.com/Sunnymark7/esp_downloadtool"><strong>View repository →</strong></a></p>
     </td>
   </tr>
@@ -247,11 +247,11 @@
   <tr>
     <td width="100%" valign="top">
       <sub><strong>PUBLIC REPOSITORY</strong> · <code>MAINTAINED</code></sub>
-      <h3><a href="https://github.com/Sunnymark7/qihou-desktop">qihou-desktop</a></h3>
-      <p>栖候：托盘常驻的桌面 3D 天气、城市地标、便利贴与倒数日</p>
-      <p><code>JavaScript</code></p>
-      <sub>Last delivery · 2026-09</sub>
-      <p><a href="https://github.com/Sunnymark7/qihou-desktop"><strong>View repository →</strong></a></p>
+      <h3><a href="https://github.com/Sunnymark7/invoice-desk">invoice-desk</a></h3>
+      <p>浏览器端 PDF 发票识别、核对、排序、明细导出与合并工作台</p>
+      <p><code>Repository</code></p>
+      <sub>Last delivery · 2026-10</sub>
+      <p><a href="https://github.com/Sunnymark7/invoice-desk"><strong>View repository →</strong></a></p>
     </td>
   </tr>
 </table>
@@ -260,11 +260,11 @@
   <tr>
     <td width="100%" valign="top">
       <sub><strong>PUBLIC REPOSITORY</strong> · <code>MAINTAINED</code></sub>
-      <h3><a href="https://github.com/Sunnymark7/invoice-desk">invoice-desk</a></h3>
-      <p>浏览器端 PDF 发票识别、核对、排序、明细导出与合并工作台</p>
-      <p><code>Repository</code></p>
+      <h3><a href="https://github.com/Sunnymark7/qihou-desktop">qihou-desktop</a></h3>
+      <p>栖候：托盘常驻的桌面 3D 天气、城市地标、便利贴与倒数日</p>
+      <p><code>JavaScript</code></p>
       <sub>Last delivery · 2026-09</sub>
-      <p><a href="https://github.com/Sunnymark7/invoice-desk"><strong>View repository →</strong></a></p>
+      <p><a href="https://github.com/Sunnymark7/qihou-desktop"><strong>View repository →</strong></a></p>
     </td>
   </tr>
 </table>
