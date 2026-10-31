@@ -249,7 +249,7 @@
       <sub><strong>PUBLIC REPOSITORY</strong> · <code>MAINTAINED</code></sub>
       <h3><a href="https://github.com/Sunnymark7/invoice-desk">invoice-desk</a></h3>
       <p>浏览器端 PDF 发票识别、核对、排序、明细导出与合并工作台</p>
-      <p><code>Repository</code></p>
+      <p><code>JavaScript</code></p>
       <sub>Last delivery · 2026-10</sub>
       <p><a href="https://github.com/Sunnymark7/invoice-desk"><strong>View repository →</strong></a></p>
     </td>
